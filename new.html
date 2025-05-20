@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Minimalistic Flip Clock</title>
+<title>Minimalistic Flip Clock with Mechanical Flip Sound</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
 
@@ -45,6 +45,10 @@
     position: relative;
     z-index: 1;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
   .flip-clock {
     display: flex;
@@ -158,7 +162,6 @@
     align-self: flex-end;
   }
   .date-display {
-    margin-top: 20px;
     font-size: 16px;
     color: #444;
     font-weight: 500;
@@ -166,6 +169,72 @@
     text-align: center;
     user-select: text;
   }
+
+  /* Sound toggle styling */
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  .toggle-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon {
+    font-size: 20px;
+    user-select: none;
+    color: #222;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+  }
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    border-radius: 26px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: 0.3s;
+  }
+  .slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    transition: 0.3s;
+  }
+  input:checked + .slider {
+    background-color: #3b82f6;
+  }
+  input:checked + .slider::before {
+    transform: translateX(22px);
+  }
+  input:focus + .slider {
+    box-shadow: 0 0 3px 3px #a6c8ff;
+    outline: none;
+  }
+
   @media(max-width: 400px) {
     .flip-clock {
       width: 100%;
@@ -195,12 +264,32 @@
       font-size: 14px;
       margin-top: 14px;
     }
+    .toggle-label {
+      font-size: 14px;
+      gap: 6px;
+    }
+    .icon {
+      font-size: 18px;
+    }
+    .switch {
+      width: 40px;
+      height: 22px;
+    }
+    .slider::before {
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+    }
+    input:checked + .slider::before {
+      transform: translateX(18px);
+    }
   }
 </style>
 </head>
 <body>
-  <div class="container" role="main">
-    <div class="flip-clock" role="timer" aria-live="off" aria-atomic="true" aria-label="Minimalistic flip clock showing current time">
+  <div class="container" role="main" aria-label="Minimalistic flip clock with mechanical flip sound toggle">
+    <div class="flip-clock" role="timer" aria-live="off" aria-atomic="true" aria-label="Flip clock showing current time">
       <div class="flip-unit" aria-label="Hour tens digit">
         <div class="upper">0</div>
         <div class="lower">0</div>
@@ -248,6 +337,16 @@
     </div>
 
     <div class="date-display" aria-live="polite" aria-atomic="true" id="dateDisplay"></div>
+
+    <div class="toggle-container">
+      <label for="soundToggle" class="toggle-label">
+        <span class="icon" id="soundIcon" aria-hidden="true">🔊</span>
+      </label>
+      <label class="switch" tabindex="0" role="switch" aria-checked="true" aria-label="Toggle flip sound on or off" for="soundToggle">
+        <input type="checkbox" id="soundToggle" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
   </div>
 
 <script>
@@ -256,6 +355,83 @@
   const flipUnits = document.querySelectorAll('.flip-unit');
   const ampmDisplay = document.querySelector('.ampm');
   const dateDisplay = document.getElementById('dateDisplay');
+  const soundToggle = document.getElementById('soundToggle');
+  const soundIcon = document.getElementById('soundIcon');
+
+  // Web Audio for mechanical flip sound effect with noise burst + pitch decay
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContext();
+  let gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.2;
+  gainNode.connect(audioCtx.destination);
+
+  function playFlipSound() {
+    if (!soundToggle.checked) return;
+
+    // Create noise buffer for short white noise burst
+    const bufferSize = audioCtx.sampleRate * 0.02; // 20ms noise
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for(let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.15; // noise amplitude
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    // Create oscillator for quick pitch decay tone
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.025);
+
+    // Create gain nodes for noise and oscillator
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.02);
+
+    const oscGain = audioCtx.createGain();
+    oscGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+
+    // Connect chain: noise -> noiseGain -> gainNode
+    noise.connect(noiseGain).connect(gainNode);
+    // Connect chain: oscillator -> oscGain -> gainNode
+    osc.connect(oscGain).connect(gainNode);
+
+    noise.start();
+    noise.stop(audioCtx.currentTime + 0.02);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.03);
+  }
+
+  // Update icon to speaker or mute
+  function updateSoundIcon() {
+    if(soundToggle.checked) {
+      soundIcon.textContent = '🔊';
+      soundToggle.setAttribute('aria-checked', 'true');
+    } else {
+      soundIcon.textContent = '🔇';
+      soundToggle.setAttribute('aria-checked', 'false');
+    }
+  }
+  // Initialize icon on load
+  updateSoundIcon();
+
+  // Toggle event
+  soundToggle.addEventListener('change', updateSoundIcon);
+
+  // Resume audio context on first user interaction if needed
+  function resumeAudioContext() {
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    document.removeEventListener('click', resumeAudioContext);
+    document.removeEventListener('keydown', resumeAudioContext);
+  }
+  document.addEventListener('click', resumeAudioContext);
+  document.addEventListener('keydown', resumeAudioContext);
 
   function pad(number) {
     return number.toString().padStart(2, '0');
@@ -282,6 +458,14 @@
 
     flipCardUpper.classList.add('animate-upper');
     flipCardLower.classList.add('animate-lower');
+
+    // Play mechanical flip sound on flip start
+    playFlipSound();
+
+    flipCardUpper.addEventListener('animationstart', function onFlipStart(){
+      playFlipSound();
+      flipCardUpper.removeEventListener('animationstart', onFlipStart);
+    });
 
     flipCardUpper.addEventListener('animationend', function upperEnd(){
       flipCardUpper.classList.remove('animate-upper');
