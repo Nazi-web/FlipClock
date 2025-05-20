@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Minimalistic Flip Clock</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Montserrat', sans-serif;
+    color: #222;
+    user-select: none;
+    perspective: 1000px;
+    position: relative;
+    overflow: hidden;
+  }
+  body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background: radial-gradient(circle at center, rgba(255 255 255 / 0.4), transparent 70%);
+    animation: slowRotate 120s linear infinite;
+    z-index: 0;
+  }
+  @keyframes slowRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .container {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+  .flip-clock {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+  }
+  .flip-unit {
+    position: relative;
+    width: 62px;
+    height: 88px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow:
+      0 4px 8px rgba(0,0,0,0.07),
+      0 0 12px rgba(255 255 255 / 0.3);
+    overflow: hidden;
+  }
+  .flip-unit .upper,
+  .flip-unit .lower,
+  .flip-unit .flip-card {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 54px;
+    font-weight: 600;
+    color: #222;
+    backface-visibility: hidden;
+  }
+  .flip-unit .upper {
+    top: 0;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    background: linear-gradient(180deg, #fafafa, #eaeaea);
+    border-bottom: 1px solid #ddd;
+    z-index: 5;
+  }
+  .flip-unit .lower {
+    bottom: 0;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    background: linear-gradient(0deg, #f6f6f6, #dcdcdc);
+    border-top: 1px solid #ddd;
+    z-index: 5;
+  }
+  .flip-card {
+    font-weight: 600;
+    position: absolute;
+    width: 100%;
+    height: 50%;
+    left: 0;
+    background: #ddd;
+    color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 54px;
+    border-radius: 12px 12px 0 0;
+    box-shadow: none;
+    z-index: 10;
+    transform-origin: bottom;
+    backface-visibility: hidden;
+  }
+  .flip-card.lower {
+    top: 50%;
+    background: #bbb;
+    border-radius: 0 0 12px 12px;
+    transform-origin: top;
+  }
+  .flip-card.animate-upper {
+    animation: flipDown 0.5s forwards cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .flip-card.animate-lower {
+    animation: flipUp 0.5s forwards cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes flipDown {
+    0% {
+      transform: rotateX(0deg);
+    }
+    100% {
+      transform: rotateX(-90deg);
+    }
+  }
+  @keyframes flipUp {
+    0% {
+      transform: rotateX(90deg);
+    }
+    100% {
+      transform: rotateX(0deg);
+    }
+  }
+  .separator {
+    font-size: 54px;
+    line-height: 1;
+    color: #888;
+    user-select: none;
+    padding: 10px 0;
+  }
+  .ampm {
+    font-size: 20px;
+    margin-left: 6px;
+    font-weight: 600;
+    color: #555;
+    user-select: none;
+    letter-spacing: 2px;
+    align-self: flex-end;
+  }
+  .date-display {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #444;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-align: center;
+    user-select: text;
+  }
+  @media(max-width: 400px) {
+    .flip-clock {
+      width: 100%;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .flip-unit {
+      width: 50px;
+      height: 72px;
+    }
+    .flip-unit .upper,
+    .flip-unit .lower,
+    .flip-unit .flip-card {
+      font-size: 40px;
+    }
+    .separator {
+      font-size: 40px;
+      padding: 6px 0;
+    }
+    .ampm {
+      font-size: 16px;
+      margin-left: 4px;
+      letter-spacing: 1.5px;
+    }
+    .date-display {
+      font-size: 14px;
+      margin-top: 14px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container" role="main">
+    <div class="flip-clock" role="timer" aria-live="off" aria-atomic="true" aria-label="Minimalistic flip clock showing current time">
+      <div class="flip-unit" aria-label="Hour tens digit">
+        <div class="upper">0</div>
+        <div class="lower">0</div>
+        <div class="flip-card upper"></div>
+        <div class="flip-card lower"></div>
+      </div>
+      <div class="flip-unit" aria-label="Hour ones digit">
+        <div class="upper">0</div>
+        <div class="lower">0</div>
+        <div class="flip-card upper"></div>
+        <div class="flip-card lower"></div>
+      </div>
+
+      <div class="separator" aria-hidden="true">:</div>
+
+      <div class="flip-unit" aria-label="Minute tens digit">
+        <div class="upper">0</div>
+        <div class="lower">0</div>
+        <div class="flip-card upper"></div>
+        <div class="flip-card lower"></div>
+      </div>
+      <div class="flip-unit" aria-label="Minute ones digit">
+        <div class="upper">0</div>
+        <div class="lower">0</div>
+        <div class="flip-card upper"></div>
+        <div class="flip-card lower"></div>
+      </div>
+
+      <div class="separator" aria-hidden="true">:</div>
+
+      <div class="flip-unit" aria-label="Second tens digit">
+        <div class="upper">0</div>
+        <div class="lower">0</div>
+        <div class="flip-card upper"></div>
+        <div class="flip-card lower"></div>
+      </div>
+      <div class="flip-unit" aria-label="Second ones digit">
+        <div class="upper">0</div>
+        <div class="lower">0</div>
+        <div class="flip-card upper"></div>
+        <div class="flip-card lower"></div>
+      </div>
+
+      <div class="ampm" aria-label="AM or PM indicator">AM</div>
+    </div>
+
+    <div class="date-display" aria-live="polite" aria-atomic="true" id="dateDisplay"></div>
+  </div>
+
+<script>
+  'use strict';
+
+  const flipUnits = document.querySelectorAll('.flip-unit');
+  const ampmDisplay = document.querySelector('.ampm');
+  const dateDisplay = document.getElementById('dateDisplay');
+
+  function pad(number) {
+    return number.toString().padStart(2, '0');
+  }
+
+  function updateDate() {
+    const now = new Date();
+    const options = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+    dateDisplay.textContent = now.toLocaleDateString(undefined, options);
+  }
+
+  function animateFlip(flipUnit, newDigit) {
+    const upper = flipUnit.querySelector('.upper');
+    const lower = flipUnit.querySelector('.lower');
+    const flipCardUpper = flipUnit.querySelector('.flip-card.upper');
+    const flipCardLower = flipUnit.querySelector('.flip-card.lower');
+
+    if(upper.textContent === newDigit && lower.textContent === newDigit) {
+      return;
+    }
+
+    flipCardUpper.textContent = upper.textContent;
+    flipCardLower.textContent = newDigit;
+
+    flipCardUpper.classList.add('animate-upper');
+    flipCardLower.classList.add('animate-lower');
+
+    flipCardUpper.addEventListener('animationend', function upperEnd(){
+      flipCardUpper.classList.remove('animate-upper');
+      upper.textContent = newDigit;
+      flipCardUpper.removeEventListener('animationend', upperEnd);
+    });
+    flipCardLower.addEventListener('animationend', function lowerEnd(){
+      flipCardLower.classList.remove('animate-lower');
+      lower.textContent = newDigit;
+      flipCardLower.removeEventListener('animationend', lowerEnd);
+    });
+  }
+
+  function updateTime() {
+    const now = new Date();
+
+    let hours = now.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    if(hours === 0) hours = 12;
+
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+
+    const timeStr = pad(hours) + pad(minutes) + pad(seconds);
+
+    for(let i = 0; i < flipUnits.length; i++) {
+      const digit = timeStr[i];
+      animateFlip(flipUnits[i], digit);
+    }
+    ampmDisplay.textContent = ampm;
+
+    updateDate();
+  }
+
+  function startClock() {
+    updateTime();
+    const now = new Date();
+    const delay = 1000 - now.getMilliseconds();
+    setTimeout(() => {
+      updateTime();
+      setInterval(updateTime, 1000);
+    }, delay);
+  }
+
+  window.onload = startClock;
+</script>
+
+</body>
+</html>
